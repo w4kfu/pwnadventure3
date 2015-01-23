@@ -31,7 +31,7 @@ All string inside packet use the following representation, PWN_STRING:
 
 #### Packet (Client -> Server)
 
-    + 0x00:         CMD         [BYTE] // 0x00
+    + 0x00:         OPCODE      [BYTE] // 0x00
     + 0x01:         USERNAME    [PWN_STRING]
     + 0x..:         PASSWORD    [PWN_STRING]
 
@@ -50,7 +50,7 @@ All string inside packet use the following representation, PWN_STRING:
 
 #### Packet (Client -> Server)
 
-    + 0x00:         CMD         [BYTE] // 0x01
+    + 0x00:         OPCODE      [BYTE] // 0x01
     + 0x01:         USERNAME    [PWN_STRING]
     + 0x..:         TEAM_NAME   [PWN_STRING]
     + 0x..:         PASSWORD    [PWN_STRING]
@@ -70,12 +70,12 @@ All string inside packet use the following representation, PWN_STRING:
 
 #### Packet (Client -> Server)
 
-    + 0x00:         CMD         [BYTE] // 0x02
+    + 0x00:         OPCODE          [BYTE] // 0x02
 
 #### Packet (Server -> Client)
 
-    + 0x00:         DWORD_00    [DWORD]
-    + 0x01:         DWORD_01    [DWORD]
+    + 0x00:         NB_TEAMMATES_CONNECTED    [DWORD]
+    + 0x01:         NB_PLAYER_CONNECTED    [DWORD]
 
 ### GetTeammates
 
@@ -84,7 +84,7 @@ All string inside packet use the following representation, PWN_STRING:
 
 #### Packet (Client -> Server)
 
-    + 0x00:         CMD         [BYTE] // 0x03
+    + 0x00:         OPCODE         [BYTE] // 0x03
 
 #### Packet (Server -> Client)
 
@@ -101,13 +101,13 @@ All string inside packet use the following representation, PWN_STRING:
 
 #### Packet (Client -> Server)
 
-    + 0x00:         CMD         [BYTE] // 0x0A
+    + 0x00:         OPCODE         [BYTE] // 0x0A
 
 #### Packet (Server -> Client)
 
     + 0x00:         NB_CHARACTER [WORD]
         for (i = 0; i < NB_CHARACTER; i++) {
-            + 0x..:     CHARACTER_ID        [WORD]
+            + 0x..:     CHARACTER_ID        [DWORD]
             + 0x..:     CHARACTER_NAME      [PWN_STRING]
             + 0x..:     CHARACTER_LOCATION  [PWN_STRING]
             + 0x..:     CHARACTER_AVATAR    [BYTE]
@@ -126,7 +126,7 @@ All string inside packet use the following representation, PWN_STRING:
 
 #### Packet (Client -> Server)
 
-    + 0x00:         CMD         [BYTE] // 0x0B
+    + 0x00:         OPCODE          [BYTE] // 0x0B
     + TODO TODO TODO
 
 #### Packet (Server -> Client)
@@ -134,11 +134,80 @@ All string inside packet use the following representation, PWN_STRING:
     + 0x00:         RETURN_VALUE    [BYTE]
     + 0x01:         CHARACTER_ID    [DWORD]
 
+### DeleteCharacter
 
-[+] Function DeleteCharacter (0x10041750), opcode = 0x0C
-[+] Function JoinGameServer (0x10041AC0), opcode = 0x0D
-[+] Function GetFlag (0x10042F60), opcode = 0x28
-[+] Function SubmitAnswer (0x10043440), opcode = 0x2A
+* VA: 0x10041750
+* Opcode: 0x0C
+
+#### Packet (Client -> Server)
+
+    + 0x00:         OPCODE        [BYTE] // 0x0C
+    + 0x01:         CHARACTER_ID  [DWORD]
+
+#### Packet (Server -> Client)
+
+    + 0x00:         RETURN_VALUE    [BYTE]
+
+### JoinGameServer
+
+* VA: 0x10041AC0
+* Opcode: 0x0D
+
+#### Packet (Client -> Server)
+
+    + 0x00:         OPCODE        [BYTE] // 0x0D
+    + 0x01:         CHARACTER_ID  [DWORD]
+
+#### Packet (Server -> Client)
+
+    + 0x00:         RETURN_VALUE_00    [BYTE]
+    + 0x01:         RETURN_VALUE_01    [BYTE]
+    + 0x..:         SERVER_ADDR        [PWN_STRING]
+    + 0x..:         SERVER_PORT        [WORD]
+    + 0x..:         TOKEN              [PWN_STRING]
+    + 0x..:         CHARACTER_NAME     [PWN_STRING]
+    + 0x..:         TEAM_NAME          [PWN_STRING]
+    + 0x..:         IS_ADMIN           [BYTE]
+    + 0x..:         NB_SOMETHING       [WORD]
+        for (i = 0; i < NB_SOMETHING; i++) {
+            + 0x0..:    LOCATION            [PWN_STRING]
+            + 0x0..:    QUEST_NAME          [PWN_STRING]
+            + 0x0..:    UNK_DWORD_00        [DWORD]
+    + 0x..:         ????               [PWN_STRING]
+        TODO TODO TODO TODO
+
+### GetFlag
+
+* VA: 0x10042F60
+* Opcode: 0x28
+
+#### Packet (Client -> Server)
+
+    + 0x00:         OPCODE        [BYTE]        // 0x28
+    + 0x01:         FLAG_NAME     [PWN_STRING]
+
+#### Packet (Server -> Client)
+
+    + 0x00:         RETURN_VALUE_00    [BYTE]
+    + 0x01:         RESULT_STRING      [PWN_STRING]
+    TODO ?
+
+### SubmitAnswer
+
+* VA: 0x10043440
+* Opcode: 0x2A
+
+#### Packet (Client -> Server)
+
+    + 0x00:         OPCODE        [BYTE]        // 0x2A
+    + 0x01:         QUESTION      [PWN_STRING]
+    + 0x..:         ANSWER        [PWN_STRING]
+
+#### Packet (Server -> Client)
+
+    + 0x00:         RETURN_VALUE_00    [BYTE]
+    + 0x01:         RESULT_STRING      [PWN_STRING]
+
 [+] Function StartQuest (0x10044710), opcode = 0x1E
 [+] Function UpdateQuest (0x10044A30), opcode = 0x1F
 [+] Function CompleteQuest (0x10044CA0), opcode = 0x20
