@@ -65,7 +65,6 @@ def HandleJump(sock):
 
 def HandleOnPositionEvent(sock):
     # Opcode: 0x766D
-    print "[+] HandleOnPositionEvent"
     #player_id = struct.unpack("<I", sock.recv(4))[0]
     coord_00 = struct.unpack("<f", sock.recv(4))[0]
     coord_01 = struct.unpack("<f", sock.recv(4))[0]
@@ -74,13 +73,15 @@ def HandleOnPositionEvent(sock):
     rota_01 = struct.unpack("<H", sock.recv(2))[0]  # YAW
     rota_02 = struct.unpack("<H", sock.recv(2))[0]  # ROLL
     unk = struct.unpack("<H", sock.recv(2))[0]  # UNK
-    print "[+] coord_00    : %f" % coord_00
-    print "[+] coord_01    : %f" % coord_01
-    print "[+] coord_02    : %f" % coord_02
-    print "[+] rota_00     : 0x%04X" % rota_00
-    print "[+] rota_01     : 0x%04X" % rota_01
-    print "[+] rota_02     : 0x%04X" % rota_02
-    print "[+] unk         : 0x%04X" % unk
+    if False:
+        print "[+] HandleOnPositionEvent"
+        print "[+] coord_00    : %f (0x%08X)" % (coord_00, coord_00)
+        print "[+] coord_01    : %f (0x%08X)" % (coord_01, coord_01)
+        print "[+] coord_02    : %f (0x%08X)" % (coord_02, coord_02)
+        print "[+] rota_00     : 0x%04X" % rota_00
+        print "[+] rota_01     : 0x%04X" % rota_01
+        print "[+] rota_02     : 0x%04X" % rota_02
+        print "[+] unk         : 0x%04X" % unk
 
     buf = struct.pack("<H", 0x766D)
     buf += struct.pack("<I", 0x13337)
@@ -110,16 +111,14 @@ def HandleSprint(sock):
 def HandleActivate(sock):
     # opcode : 0x692A
     print "[+] HandleActivate"
-    unk_word_00 = struct.unpack("<H", sock.recv(2))[0]      # READ STRING
-    name = sock.recv(unk_word_00)
+    name = ReadPWNString(sock)
     unk_dword_00 = struct.unpack("<f", sock.recv(4))[0]
     unk_dword_01 = struct.unpack("<f", sock.recv(4))[0]
     unk_dword_02 = struct.unpack("<f", sock.recv(4))[0]
-    print "[+] unk_word_00      : 0x%04X" % unk_word_00
     print "[+] name             : %s" % name
-    print "[+] unk_dword_00     : %f" % unk_dword_00
-    print "[+] unk_dword_01     : %f" % unk_dword_01
-    print "[+] unk_dword_02     : %f" % unk_dword_02
+    print "[+] unk_dword_00     : %f (0x%08X)" % (unk_dword_00, unk_dword_00)
+    print "[+] unk_dword_01     : %f (0x%08X)" % (unk_dword_01, unk_dword_01)
+    print "[+] unk_dword_02     : %f (0x%08X)" % (unk_dword_02, unk_dword_02)
 
 def HandleSetPvPDesired(sock):
     # opcode : 0x7670
@@ -147,6 +146,54 @@ def HandleChat(sock):
     buf += MakePWNString(msg)
     sock.send(buf)
 
+def ActorSpawnEvent(sock):
+    buf = struct.pack("<H", 0x6B6D)
+    buf += struct.pack("<I", 0x01)      # UNK_
+    buf += struct.pack("<I", 0x00)      # UNK_
+    buf += struct.pack("<B", 0x00)      # UNK_
+    buf += MakePWNString("GreatBallsOfFire")
+    buf += struct.pack("<I", 0xC71C6A27 + 100)
+    buf += struct.pack("<I", 0xC696A4E9 + 100)
+    buf += struct.pack("<I", 0x00000988)
+    buf += struct.pack("<H", 0x00)
+    buf += struct.pack("<H", 0x80)
+    buf += struct.pack("<H", 0x00)
+    buf += struct.pack("<I", 0x00)
+    #sock.send(buf)
+    buf = '6d6b0700000000000000000c0047756e53686f704f776e6572005712c700048dc6000017450000ff7f000064000000'.decode('hex')
+    sock.send(buf)
+
+def HandleUse(sock):
+    # opcode: 0x6565
+    print "[+] HandleUse"
+    unk_dword_00 = struct.unpack("<I", sock.recv(4))[0]
+    print "[+] unk_dword_00 : 0x%08X" % unk_dword_00
+    buf = struct.pack("<H", 0x7323)
+    buf += struct.pack("<I", unk_dword_00)
+    buf += MakePWNString("Initial")
+    sock.send(buf)
+
+def HandleTransitionToNPCState(sock):
+    # opcode: 0x3E23
+    print "[+] HandleTransitionToNPCState"
+    name = ReadPWNString(sock)
+    print "[+] name: %s" % name
+    buf = struct.pack("<H", 0x7323)
+    buf += struct.pack("<I", 0x08)
+    buf += MakePWNString(name)
+    sock.send(buf)
+
+def HandleOnSetCurrentQuestEvent(sock):
+    # opcode: 0x3D71
+    print "[+] HandleOnSetCurrentQuestEvent"
+    name = ReadPWNString(sock)
+    print "[+] name: %s" % name
+
+def SendManaUpdate(sock):
+    buf = struct.pack("<H", 0x616D)
+    buf += struct.pack("<I", 0x42)  # MANA VALUE
+    sock.send(buf)
+
 def HandleClient(sock):
     print "[+] HandleClient"
     buf = Buffer(sock.recv(1000))
@@ -159,13 +206,16 @@ def HandleClient(sock):
     buf += struct.pack("<H", 0x00)
     buf += struct.pack("<H", 0x00)
     sock.send(buf)
+    ActorSpawnEvent(sock)
+    b = '6d6b0100000000000000001000477265617442616c6c734f664669726500872ac7000c5ac70000a143000000800000640000006d6b0200000000000000000c004c6f73744361766542757368002351c700d62cc70000b343000000000000640000006d6b030000000000000000090042656172436865737400b0f6c500e27b470070264523fde67f8100640000006d6b0400000000000000000800436f77436865737400fe764800a16fc80040924422fe088fc5fd640000006d6b05000000000000000009004c617661436865737400bc464700d8a3c50060be440000e3380000640000006d6b0600000000000000000b00426c6f636b79436865737400f03ec500bab34600300e45000000c00000640000006d6b0700000000000000000c0047756e53686f704f776e6572005712c700048dc6000017450000ff7f0000640000006d6b0800000000000000000f004a757374696e546f6c657261626c65007c20c700007ec600e00d450000aa6a0000640000006d6b09000000000000000006004661726d65720062a84600102147005005450000e3380000640000006d6b0a00000000000000000d004d69636861656c416e67656c6fc0277e48c0ba72c800e0b0440000c7510000640000006d6b0b00000000000000000a00476f6c64656e4567673100aac3c6004a8d4600008243000000000000640000006d6b0c00000000000000000a00476f6c64656e45676732007249c7001f6fc700e09c45000000000000640000006d6b0d00000000000000000a00476f6c64656e456767330080bf460019884700302645000000000000640000006d6b0e00000000000000000a00476f6c64656e4567673400256c47000288c600b03745000000000000640000006d6b0f00000000000000000a00476f6c64656e456767350040be4400d869460070db45000000000000640000006d6b1000000000000000000a00476f6c64656e4567673600503546002c4dc60080cd43000000000000640000006d6b1100000000000000000a00476f6c64656e4567673780ed8dc7003f51c700a0cd44000000000000640000006d6b1200000000000000000a00476f6c64656e4567673800143d4700aadb4600003044000000000000640000006d6b1300000000000000000a00476f6c64656e4567673900c97e470060b3c500009a45000000000000640000006d6b1400000000000000000e0042616c6c6d65725065616b45676700a02dc5006c2cc600202446000000000000640000006d6b150000000000000000110042616c6c6d65725065616b506f7374657200a8bec500302bc600302646000000000000640000000000'
+    sock.send(b.decode('hex'))
+    #sock.send("\x00" * 4)
     while True:
         buf = sock.recv(2)
         if len(buf) == 0:
             continue
         buf = Buffer(buf)
         opcode = buf.GetWord()
-        print "[+] Opcode: %02X" % opcode
         if opcode == 0x766D:
             HandleOnPositionEvent(sock)
         elif opcode == 0x706A:
@@ -182,8 +232,14 @@ def HandleClient(sock):
             HandleChat(sock)
         elif opcode == 0x3130:
             HandleSetCircuitInputs(sock)
+        elif opcode == 0x6565:
+            HandleUse(sock)
+        elif opcode == 0x3E23:
+            HandleTransitionToNPCState(sock)
+        elif opcode == 0x3D71:
+            HandleOnSetCurrentQuestEvent(sock)
         else:
-            print "[-] unhandled opcode!"
+            print "[-] unhandled opcode! 0x%02X" % opcode
             sys.exit()
 
 
