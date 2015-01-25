@@ -53,6 +53,10 @@ class Buffer:
 def MakePWNString(buf):
     return struct.pack("<H", len(buf)) + buf
 
+def ReadPWNString(sock):
+    length = struct.unpack("<H", sock.recv(2))[0]
+    return sock.recv(length)
+
 def HandleJump(sock):
     # Opcode: 0x706A
     print "[+] HandleOnPositionEvent"
@@ -123,6 +127,26 @@ def HandleSetPvPDesired(sock):
     unk_b = struct.unpack("<B", sock.recv(1))[0]
     print "[+] unk_b : 0x%02X" % unk_b
 
+def HandleSetCircuitInputs(sock):
+    # opcode : 0x3130
+    print "[+] HandleSetCircuitInputs"
+    name = ReadPWNString(sock)
+    unk_dword_00 = struct.unpack("<I", sock.recv(4))[0]
+    print "[+] name             : %s" % name
+    print "[+] unk_dword_00     : 0x%08X" % unk_dword_00
+
+def HandleChat(sock):
+    # opcode : 0x2A23
+    print "[+] HandleChat"
+    msg = ReadPWNString(sock)
+    if len(msg) == 0:
+        return
+    print "msg: %s" % msg
+    buf = struct.pack("<H", 0x2A23)
+    buf += struct.pack("<I", 0x13337) # PLAYER_ID
+    buf += MakePWNString(msg)
+    sock.send(buf)
+
 def HandleClient(sock):
     print "[+] HandleClient"
     buf = Buffer(sock.recv(1000))
@@ -154,6 +178,10 @@ def HandleClient(sock):
             HandleSprint(sock)
         elif opcode == 0x7670:
             HandleSetPvPDesired(sock)
+        elif opcode == 0x2A23:
+            HandleChat(sock)
+        elif opcode == 0x3130:
+            HandleSetCircuitInputs(sock)
         else:
             print "[-] unhandled opcode!"
             sys.exit()
