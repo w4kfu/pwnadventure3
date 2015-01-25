@@ -53,11 +53,47 @@ class Buffer:
 def MakePWNString(buf):
     return struct.pack("<H", len(buf)) + buf
 
+def HandleJump(sock):
+    # Opcode: 0x706A
+    print "[+] HandleOnPositionEvent"
+    bool_j = struct.unpack("<B", sock.recv(1))[0]
+    print "[+] bool_j : 0x%02X" % bool_j
+
+def HandleOnPositionEvent(sock):
+    # Opcode: 0x766D
+    print "[+] HandleOnPositionEvent"
+    #player_id = struct.unpack("<I", sock.recv(4))[0]
+    coord_00 = struct.unpack("<f", sock.recv(4))[0]
+    coord_01 = struct.unpack("<f", sock.recv(4))[0]
+    coord_02 = struct.unpack("<f", sock.recv(4))[0]
+    rota_00 = struct.unpack("<H", sock.recv(2))[0]  # PITCH
+    rota_01 = struct.unpack("<H", sock.recv(2))[0]  # YAW
+    rota_02 = struct.unpack("<H", sock.recv(2))[0]  # ROLL
+    unk = struct.unpack("<H", sock.recv(2))[0]  # UNK
+    print "[+] coord_00    : %f" % coord_00
+    print "[+] coord_01    : %f" % coord_01
+    print "[+] coord_02    : %f" % coord_02
+    print "[+] rota_00     : 0x%04X" % rota_00
+    print "[+] rota_01     : 0x%04X" % rota_01
+    print "[+] rota_02     : 0x%04X" % rota_02
+    print "[+] unk         : 0x%04X" % unk
+
+    buf = struct.pack("<H", 0x766D)
+    buf += struct.pack("<I", 0x13337)
+    buf += struct.pack("<f", coord_00)
+    buf += struct.pack("<f", coord_01)
+    buf += struct.pack("<f", coord_02)
+    buf += struct.pack("<H", 0x00)
+    buf += struct.pack("<H", 0x00)
+    buf += struct.pack("<H", 0x00)
+    buf += struct.pack("<H", 0x00)
+    sock.send(buf)
+
 def HandleClient(sock):
     print "[+] HandleClient"
     buf = Buffer(sock.recv(1000))
     print hexdump(buf.buf)
-    buf = struct.pack("<I", 0x000165A7)
+    buf = struct.pack("<I", 0x13337)
     buf += struct.pack("<I", 0xC71C6A27)
     buf += struct.pack("<I", 0xC696A4E9)
     buf += struct.pack("<I", 0x45189497)
@@ -66,11 +102,18 @@ def HandleClient(sock):
     buf += struct.pack("<H", 0x00)
     sock.send(buf)
     while True:
-        buf = sock.recv(1000)
+        buf = sock.recv(2)
         if len(buf) == 0:
             continue
         buf = Buffer(buf)
-        print hexdump(buf.buf)
+        opcode = buf.GetWord()
+        print "[+] Opcode: %02X" % opcode
+        if opcode == 0x766D:
+            HandleOnPositionEvent(sock)
+        elif opcode == 0x706A:
+            HandleJump(sock)
+        else:
+            print "[-] unhandled opcode!"
 
 
 bindsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
