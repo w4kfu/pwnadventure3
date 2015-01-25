@@ -1,5 +1,6 @@
 import socket, ssl
 import struct
+from thread import *
 
 def hexdump(src, length=16):
     FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or '.' for x in range(256)])
@@ -139,9 +140,16 @@ def HandleJoinGameServer(sock, buf):
 
 def HandleNotifyDisconnect(sock, buf):
     print "[+] HandleNotifyDisconnect"
+    sock.close()
+    
 
 def HandleTick(sock, buf):
     print "[+] HandleTick"
+
+def HandleGetTeamMates(sock, buf):
+    print "[+] HandleGetTeamMates"
+    buf = struct.pack("<H", 0x0)    # NB TEAMMATES
+    sock.write(buf)
 
 def HandleClient(sock):
     SendMOTD(sock)
@@ -165,15 +173,19 @@ def HandleClient(sock):
             HandleTick(sock, buf)
         elif opcode == 0x81:
             HandleNotifyDisconnect(sock, buf)
+            return
+        elif opcode == 0x03:
+            HandleGetTeamMates(sock, buf)
         else:
             print "[-] unhandled opcode!"
 
-bindsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-bindsocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-bindsocket.bind(('', 3333))
-bindsocket.listen(5)
-newsocket, fromaddr = bindsocket.accept()
-print newsocket, fromaddr
-c = ssl.wrap_socket(newsocket, server_side=True, certfile="root-ca.crt", keyfile="root-ca.key", ssl_version=ssl.PROTOCOL_TLSv1)
-HandleClient(c)
-bindsocket.close()
+if __name__ =='__main__':
+    bindsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    bindsocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    bindsocket.bind(('', 3333))
+    bindsocket.listen(5)
+    while 1:
+        newsocket, fromaddr = bindsocket.accept()
+        print newsocket, fromaddr
+        c = ssl.wrap_socket(newsocket, server_side=True, certfile="root-ca.crt", keyfile="root-ca.key", ssl_version=ssl.PROTOCOL_TLSv1)
+        start_new_thread(HandleClient ,(c,))
