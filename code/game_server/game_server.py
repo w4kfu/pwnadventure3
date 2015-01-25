@@ -89,6 +89,40 @@ def HandleOnPositionEvent(sock):
     buf += struct.pack("<H", 0x00)
     sock.send(buf)
 
+def HandleSendCurrentSlotEvent(sock):
+    # opcode : 0x3D73
+    print "[+] HandleSendCurrentSlotEvent"
+    slot_n = struct.unpack("<B", sock.recv(1))[0]
+    print "[+] slot_n : 0x%02X" % slot_n
+    if slot_n < 0x0A:
+        sock.send(struct.pack("<H", 0x3D73) + struct.pack("<B", slot_n))
+
+def HandleSprint(sock):
+    # opcode : 0x6E72
+    print "[+] HandleSprint"
+    unk_b = struct.unpack("<B", sock.recv(1))[0]
+    print "[+] unk_b : 0x%02X" % unk_b
+
+def HandleActivate(sock):
+    # opcode : 0x692A
+    print "[+] HandleActivate"
+    unk_word_00 = struct.unpack("<H", sock.recv(2))[0]      # READ STRING
+    name = sock.recv(unk_word_00)
+    unk_dword_00 = struct.unpack("<f", sock.recv(4))[0]
+    unk_dword_01 = struct.unpack("<f", sock.recv(4))[0]
+    unk_dword_02 = struct.unpack("<f", sock.recv(4))[0]
+    print "[+] unk_word_00      : 0x%04X" % unk_word_00
+    print "[+] name             : %s" % name
+    print "[+] unk_dword_00     : %f" % unk_dword_00
+    print "[+] unk_dword_01     : %f" % unk_dword_01
+    print "[+] unk_dword_02     : %f" % unk_dword_02
+
+def HandleSetPvPDesired(sock):
+    # opcode : 0x7670
+    print "[+] HandleSetPvPDesired"
+    unk_b = struct.unpack("<B", sock.recv(1))[0]
+    print "[+] unk_b : 0x%02X" % unk_b
+
 def HandleClient(sock):
     print "[+] HandleClient"
     buf = Buffer(sock.recv(1000))
@@ -112,8 +146,17 @@ def HandleClient(sock):
             HandleOnPositionEvent(sock)
         elif opcode == 0x706A:
             HandleJump(sock)
+        elif opcode == 0x3D73:
+            HandleSendCurrentSlotEvent(sock)
+        elif opcode == 0x692A:
+            HandleActivate(sock)
+        elif opcode == 0x6E72:
+            HandleSprint(sock)
+        elif opcode == 0x7670:
+            HandleSetPvPDesired(sock)
         else:
             print "[-] unhandled opcode!"
+            sys.exit()
 
 
 bindsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
