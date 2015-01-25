@@ -103,16 +103,45 @@ def HandleJoinGameServer(sock, buf):
     buf += "\x01"    # return_value_01
     buf += MakePWNString("127.0.0.1")      # SERVER IP ADDR
     buf += struct.pack("<H", 4242)
-    buf += '20003631336537636633313565313064666236646334656463323336346631323930060069696964736603006c736500010008004c6f7374436176650700476574466972650000000008004c6f73744361766500000000000000000000000000000000000000000000000000'.decode('hex')
-    #buf += MakePWNString("1b3f03c9dfd2562934352179be88e122")
-    #buf += MakePWNString("NICKNAME")
-    #buf += MakePWNString("sucemwa")
-    #buf += "\x01"
-    #buf += struct.pack("<H", 0x0)
-    #buf += MakePWNString("Town")        # LOCATION
-    #buf += struct.pack("<H", 0x0)
-    #buf += "\x00" * 100
+    buf += MakePWNString("1b3f03c9dfd2562934352179be88e122")    # token ?
+    buf += MakePWNString("NICKNAME")
+    buf += MakePWNString("sucemwa")
+    buf += "\x01"                       # IS_ADMIN
+    buf += struct.pack("<H", 0x1)       # NB_QUEST
+    buf += MakePWNString("Bears")       # QUEST_NAME
+    buf += MakePWNString("Initial")     # STATE_NAME
+    buf += struct.pack("<I", 0x0)       # UNK ??? STATE ??
+
+    buf += MakePWNString("Bears")       # ACTIVE_QUEST
+
+    buf += struct.pack("<H", 0x2)       # NB_ITEM
+
+    buf += MakePWNString("GreatBallsOfFire")       # ITEM_NAME
+    buf += struct.pack("<I", 0x1)                  # NB
+    buf += struct.pack("<H", 0x0)                  # NB
+
+    buf += MakePWNString("ShotgunAmmo")            # ITEM_NAME
+    buf += struct.pack("<I", 0x8)                  # NB
+    buf += struct.pack("<H", 0x10)                 # NB
+
+    # SLOT BAR ?
+    buf += MakePWNString("GreatBallsOfFire")       # ACTIVE?
+    for i in xrange(0, 0xA - 1):
+        buf += MakePWNString("")
+
+    buf += struct.pack("<B", 0x0)       # ACTIVE_SLOT ?
+
+    buf += struct.pack("<H", 0x01)      # NB_ACHIEVEMENT
+
+    buf += MakePWNString("Achievement_GreatBallsOfFire")
+
     sock.write(buf)
+
+def HandleNotifyDisconnect(sock, buf):
+    print "[+] HandleNotifyDisconnect"
+
+def HandleTick(sock, buf):
+    print "[+] HandleTick"
 
 def HandleClient(sock):
     SendMOTD(sock)
@@ -132,6 +161,10 @@ def HandleClient(sock):
             HandleGetPlayerCounts(sock, buf)
         elif opcode == 0x0D:
             HandleJoinGameServer(sock, buf)
+        elif opcode == 0x80:
+            HandleTick(sock, buf)
+        elif opcode == 0x81:
+            HandleNotifyDisconnect(sock, buf)
         else:
             print "[-] unhandled opcode!"
 
